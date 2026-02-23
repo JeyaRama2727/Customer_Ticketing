@@ -8,7 +8,10 @@ import os
 from .base import *  # noqa: F401,F403
 
 # ── Security ──────────────────────────────────────────────────
-SECRET_KEY = os.environ['DJANGO_SECRET_KEY']       # required in production
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'oq138oq8$an2pw&@_llh=)xz6jn53fqyu8z&j)rawa13gsj&i@',
+)
 DEBUG = False
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS',
