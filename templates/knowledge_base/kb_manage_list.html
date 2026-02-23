@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Articles — Knowledge Base{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manage Articles</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Create and manage knowledge base content</p>
+        </div>
+        <a href="{% url 'knowledge_base:article_create' %}"
+           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New Article
+        </a>
+    </div>
+
+    <!-- ── Filters ───────────────────────────────────────── -->
+    <div class="flex flex-wrap gap-2 items-center">
+        <a href="{% url 'knowledge_base:manage' %}"
+           class="px-3 py-1.5 text-sm rounded-lg {% if not status_filter %}bg-blue-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %} transition">All</a>
+        <a href="?status=draft"
+           class="px-3 py-1.5 text-sm rounded-lg {% if status_filter == 'draft' %}bg-yellow-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %} transition">Draft</a>
+        <a href="?status=published"
+           class="px-3 py-1.5 text-sm rounded-lg {% if status_filter == 'published' %}bg-green-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %} transition">Published</a>
+        <a href="?status=archived"
+           class="px-3 py-1.5 text-sm rounded-lg {% if status_filter == 'archived' %}bg-gray-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %} transition">Archived</a>
+
+        <div class="flex-1"></div>
+
+        <form action="{% url 'knowledge_base:manage' %}" method="get" class="flex gap-2">
+            <input type="text" name="q" value="{{ search }}" placeholder="Search articles..."
+                   class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 transition w-48">
+            <button type="submit" class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 transition">Search</button>
+        </form>
+    </div>
+
+    <!-- ── Articles Table ────────────────────────────────── -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Category</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Views</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Helpful</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Updated</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for article in articles %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900 dark:text-white text-sm">{{ article.title|truncatechars:50 }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {% if article.is_internal %}<span class="text-yellow-600 dark:text-yellow-400">Internal</span>{% endif %}
+                                {% if article.is_featured %}<span class="text-purple-600 dark:text-purple-400 {% if article.is_internal %}ml-2{% endif %}">Featured</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{{ article.category.name|default:"—" }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if article.status == 'published' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Published</span>
+                            {% elif article.status == 'draft' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Draft</span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400">Archived</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-gray-300">{{ article.views_count }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-gray-300">{{ article.helpfulness_rate }}%</td>
+                        <td class="px-6 py-4 text-right text-sm text-gray-500 dark:text-gray-400">{{ article.updated_at|date:"M d" }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="{% url 'knowledge_base:article_edit' article.slug %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium mr-3">Edit</a>
+                            <a href="{% url 'knowledge_base:article' article.slug %}" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 text-sm" target="_blank">View</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            <p class="text-sm">No articles found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if articles.has_other_pages %}
+    <div class="flex justify-center gap-2">
+        {% if articles.has_previous %}
+        <a href="?page={{ articles.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search %}&q={{ search }}{% endif %}"
+           class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Previous</a>
+        {% endif %}
+        <span class="px-4 py-2 text-sm text-gray-500">Page {{ articles.number }} of {{ articles.paginator.num_pages }}</span>
+        {% if articles.has_next %}
+        <a href="?page={{ articles.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search %}&q={{ search }}{% endif %}"
+           class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

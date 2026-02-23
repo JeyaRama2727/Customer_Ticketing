@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ room.subject }} — Live Chat — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-[calc(100vh-8rem)]" x-data="chatApp()" x-init="init()">
+    <!-- Chat Header -->
+    <div class="flex items-center justify-between bg-white dark:bg-gray-800 rounded-t-xl border border-gray-200 dark:border-gray-700 px-5 py-3">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'livechat:room_list' %}" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ room.subject }}</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {% if request.user.role == 'customer' %}
+                        Agent: {{ room.agent.full_name|default:"Waiting for agent..." }}
+                    {% else %}
+                        Customer: {{ room.customer.full_name|default:room.customer.email }}
+                    {% endif %}
+                    <span class="ml-2 inline-flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full
+                            {% if room.status == 'active' %}bg-green-500{% elif room.status == 'waiting' %}bg-yellow-500 animate-pulse{% else %}bg-gray-400{% endif %}">
+                        </span>
+                        {{ room.get_status_display }}
+                    </span>
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Typing indicator -->
+            <span x-show="typingUser" x-transition
+                  class="text-xs text-gray-400 italic" x-text="typingUser + ' is typing...'"></span>
+
+            {% if room.status != 'closed' %}
+            <form method="post" action="{% url 'livechat:close_chat' room.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                        onclick="return confirm('Close this chat?')">
+                    End Chat
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 border-x border-gray-200 dark:border-gray-700 px-4 py-4 space-y-3"
+         id="messages-container" x-ref="messagesContainer">
+
+        {% for msg in chat_messages %}
+        <div class="flex {% if msg.message_type == 'system' %}justify-center{% elif msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
+            {% if msg.message_type == 'system' %}
+            <div class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ msg.content }}</p>
+            </div>
+            {% else %}
+            <div class="max-w-[70%] {% if msg.sender == request.user %}order-2{% endif %}">
+                <div class="px-4 py-2.5 rounded-2xl text-sm
+                    {% if msg.sender == request.user %}
+                        bg-blue-600 text-white rounded-br-md
+                    {% else %}
+                        bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-md
+                    {% endif %}">
+                    {{ msg.content }}
+                </div>
+                <div class="flex items-center gap-1 mt-1 {% if msg.sender == request.user %}justify-end{% endif %}">
+                    <span class="text-[10px] text-gray-400">
+                        {{ msg.sender.full_name|default:"Unknown" }} · {{ msg.created_at|time:"H:i" }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Dynamic messages from WebSocket -->
+        <template x-for="msg in newMessages" :key="msg.id">
+            <div class="flex" :class="msg.message_type === 'system' ? 'justify-center' : (msg.sender_id === currentUserId ? 'justify-end' : 'justify-start')">
+                <!-- System message -->
+                <template x-if="msg.message_type === 'system'">
+                    <div class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <p class="text-xs text-gray-500 dark:text-gray-400" x-text="msg.content"></p>
+                    </div>
+                </template>
+                <!-- User message -->
+                <template x-if="msg.message_type !== 'system'">
+                    <div class="max-w-[70%]">
+                        <div class="px-4 py-2.5 rounded-2xl text-sm"
+                             :class="msg.sender_id === currentUserId
+                                 ? 'bg-blue-600 text-white rounded-br-md'
+                                 : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-md'">
+                            <span x-text="msg.content"></span>
+                        </div>
+                        <div class="flex items-center gap-1 mt-1"
+                             :class="msg.sender_id === currentUserId ? 'justify-end' : ''">
+                            <span class="text-[10px] text-gray-400" x-text="msg.sender_name + ' · ' + formatTime(msg.created_at)"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+
+    <!-- Input Area -->
+    {% if room.status != 'closed' %}
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl px-4 py-3">
+        <form @submit.prevent="sendMessage()" class="flex gap-3">
+            <input type="text" x-model="messageInput" x-ref="messageInput"
+                   @input="handleTyping()"
+                   placeholder="Type a message..."
+                   autocomplete="off"
+                   class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 transition">
+            <button type="submit"
+                    :disabled="!messageInput.trim()"
+                    class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+                Send
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl px-4 py-4 text-center">
+        <p class="text-sm text-gray-500 dark:text-gray-400">This chat has been closed.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function chatApp() {
+    return {
+        currentUserId: '{{ request.user.id }}',
+        currentUserName: '{{ request.user.full_name|default:request.user.email }}',
+        roomId: '{{ room.id }}',
+        messageInput: '',
+        newMessages: [],
+        pendingIds: new Set(),  // Track messages we've sent optimistically
+        typingUser: null,
+        typingTimeout: null,
+        ws: null,
+        wsConnected: false,
+        pollInterval: null,
+        lastTimestamp: null,
+        csrfToken: '{{ csrf_token }}',
+
+        init() {
+            this.scrollToBottom();
+            // Set lastTimestamp to current time so polling only fetches NEW messages
+            this.lastTimestamp = new Date().toISOString();
+            this.connectWebSocket();
+        },
+
+        connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const wsUrl = `${protocol}://${window.location.host}/desk/ws/chat/${this.roomId}/`;
+
+            try {
+                this.ws = new WebSocket(wsUrl);
+            } catch (e) {
+                console.warn('WebSocket not available, using HTTP fallback.');
+                this.startPolling();
+                return;
+            }
+
+            this.ws.onopen = () => {
+                this.wsConnected = true;
+                this.stopPolling();
+                console.log('WebSocket connected');
+            };
+
+            this.ws.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+
+                if (data.type === 'message') {
+                    const msg = data.message;
+                    // Skip if already in newMessages (duplicate from polling or own echo)
+                    if (this.newMessages.find(m => m.id === msg.id)) {
+                        return;
+                    }
+                    // If this is our own message echoed back, replace the temp entry
+                    if (msg.sender_id === this.currentUserId) {
+                        const tempIdx = this.newMessages.findIndex(
+                            m => m.id.startsWith('temp-') && m.content === msg.content
+                        );
+                        if (tempIdx !== -1) {
+                            // Replace temp with real message (updates ID)
+                            this.newMessages[tempIdx] = msg;
+                            return;
+                        }
+                    }
+                    this.newMessages.push(msg);
+                    this.$nextTick(() => this.scrollToBottom());
+                } else if (data.type === 'typing') {
+                    this.typingUser = data.is_typing ? data.user_name : null;
+                }
+            };
+
+            this.ws.onerror = () => {
+                console.warn('WebSocket error, falling back to HTTP polling.');
+                this.wsConnected = false;
+                this.startPolling();
+            };
+
+            this.ws.onclose = () => {
+                this.wsConnected = false;
+                // Try reconnect after 3s; if that also fails, polling stays active
+                setTimeout(() => {
+                    if (!this.wsConnected) {
+                        this.startPolling();
+                        this.connectWebSocket();
+                    }
+                }, 3000);
+            };
+        },
+
+        /* ── HTTP polling fallback ─────────────────────────── */
+
+        startPolling() {
+            if (this.pollInterval) return;
+            this.pollInterval = setInterval(() => this.pollMessages(), 2000);
+        },
+
+        stopPolling() {
+            if (this.pollInterval) {
+                clearInterval(this.pollInterval);
+                this.pollInterval = null;
+            }
+        },
+
+        async pollMessages() {
+            try {
+                const url = `/desk/chat/${this.roomId}/messages/?after=${encodeURIComponent(this.lastTimestamp)}`;
+                const res = await fetch(url);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.messages && data.messages.length) {
+                    for (const msg of data.messages) {
+                        // Avoid duplicates
+                        if (!this.newMessages.find(m => m.id === msg.id)) {
+                            this.newMessages.push(msg);
+                        }
+                    }
+                    this.lastTimestamp = data.messages[data.messages.length - 1].created_at;
+                    this.$nextTick(() => this.scrollToBottom());
+                }
+            } catch (e) {
+                console.warn('Poll error:', e);
+            }
+        },
+
+        /* ── Send message ──────────────────────────────────── */
+
+        async sendMessage() {
+            const content = this.messageInput.trim();
+            if (!content) return;
+
+            // Generate a temporary ID for optimistic UI
+            const tempId = 'temp-' + Date.now();
+            const now = new Date().toISOString();
+
+            // Try WebSocket first
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                // Add message optimistically (show immediately)
+                const optimisticMsg = {
+                    id: tempId,
+                    content: content,
+                    message_type: 'text',
+                    sender_id: this.currentUserId,
+                    sender_name: this.currentUserName,
+                    created_at: now,
+                };
+                this.newMessages.push(optimisticMsg);
+                this.$nextTick(() => this.scrollToBottom());
+
+                this.ws.send(JSON.stringify({ type: 'text', message: content }));
+                this.messageInput = '';
+                this.$refs.messageInput.focus();
+
+                // The server will broadcast back with the real ID.
+                // We'll replace the temp message when we receive it.
+                // For simplicity, we just track that we sent one and skip the echo.
+                return;
+            }
+
+            // HTTP fallback
+            try {
+                const res = await fetch(`/chat/${this.roomId}/send/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': this.csrfToken,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `message=${encodeURIComponent(content)}`,
+                });
+                if (!res.ok) { console.error('Send failed', res.status); return; }
+                const msg = await res.json();
+                this.newMessages.push(msg);
+                this.lastTimestamp = msg.created_at;
+                this.messageInput = '';
+                this.$refs.messageInput.focus();
+                this.$nextTick(() => this.scrollToBottom());
+            } catch (e) {
+                console.error('Send error:', e);
+            }
+        },
+
+        handleTyping() {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                // Typing events can be implemented via the consumer
+            }
+        },
+
+        scrollToBottom() {
+            const container = this.$refs.messagesContainer || document.getElementById('messages-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        },
+
+        formatTime(isoString) {
+            const d = new Date(isoString);
+            return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+        },
+    };
+}
+
+// Scroll to bottom on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('messages-container');
+    if (container) container.scrollTop = container.scrollHeight;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Complete Your Profile — JeyaRamaDesk{% endblock %}
+
+{% block public_content %}
+<div class="w-full max-w-lg fade-in">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-500 shadow-2xl mb-4">
+            <span class="text-3xl font-bold text-white">J</span>
+        </div>
+        <h1 class="text-2xl font-bold text-white">JeyaRamaDesk</h1>
+        <p class="text-primary-200 text-sm mt-1">Complete your profile to get started</p>
+    </div>
+
+    <!-- Profile Completion Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-1">Almost There!</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            Please fill in your details below so we can serve you better.
+        </p>
+
+        <!-- Validation errors -->
+        {% if messages %}
+        <div class="mb-5 space-y-2">
+            {% for message in messages %}
+            <div class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm
+                        {% if message.tags == 'error' %}bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400
+                        {% else %}bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400{% endif %}">
+                {% if message.tags == 'error' %}
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {% endif %}
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'accounts:complete_profile' %}" class="space-y-5"
+              x-data="{ phone: '{{ phone|default:'' }}' }">
+            {% csrf_token %}
+
+            <!-- First Name -->
+            <div>
+                <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    First Name <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="first_name" name="first_name" required
+                       value="{{ first_name|default:'' }}"
+                       class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg
+                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                              focus:ring-2 focus:ring-primary-500 focus:border-transparent
+                              placeholder-gray-400 text-sm transition-colors"
+                       placeholder="Enter your first name">
+            </div>
+
+            <!-- Last Name -->
+            <div>
+                <label for="last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Last Name <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="last_name" name="last_name" required
+                       value="{{ last_name|default:'' }}"
+                       class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg
+                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                              focus:ring-2 focus:ring-primary-500 focus:border-transparent
+                              placeholder-gray-400 text-sm transition-colors"
+                       placeholder="Enter your last name">
+            </div>
+
+            <!-- Phone Number -->
+            <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Phone Number
+                    <span class="text-gray-400 font-normal">(optional — 10 digits)</span>
+                </label>
+                <div class="relative">
+                    <input type="tel" id="phone" name="phone"
+                           x-model="phone"
+                           maxlength="10"
+                           pattern="\d{10}"
+                           class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg
+                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                  focus:ring-2 focus:ring-primary-500 focus:border-transparent
+                                  placeholder-gray-400 text-sm transition-colors"
+                           placeholder="e.g. 9876543210"
+                           @input="phone = phone.replace(/\D/g, '').slice(0, 10)">
+                    <!-- Digit counter -->
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs"
+                          :class="phone.length === 10 ? 'text-green-500' : 'text-gray-400'">
+                        <span x-text="phone.length"></span>/10
+                    </span>
+                </div>
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                    If provided, must be exactly 10 digits.
+                </p>
+            </div>
+
+            <!-- Address -->
+            <div>
+                <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Address
+                </label>
+                <textarea id="address" name="address" rows="3"
+                          class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg
+                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                 focus:ring-2 focus:ring-primary-500 focus:border-transparent
+                                 placeholder-gray-400 text-sm transition-colors resize-none"
+                          placeholder="Enter your address">{{ address|default:'' }}</textarea>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit"
+                    class="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium
+                           rounded-lg transition-colors shadow-lg shadow-primary-500/30 text-sm">
+                Complete Profile &amp; Continue
+            </button>
+        </form>
+    </div>
+
+    <p class="text-center text-xs text-primary-300 mt-6">
+        &copy; 2026 JeyaRamaDesk. All rights reserved.
+    </p>
+</div>
+{% endblock %}

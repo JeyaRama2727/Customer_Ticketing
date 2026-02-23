@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Tickets — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tickets</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ stats.total }} total tickets</p>
+        </div>
+        <a href="{% url 'tickets:create' %}"
+           class="inline-flex items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors shadow-sm text-sm">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New Ticket
+        </a>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <a href="?status=" class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-primary-300 transition-colors">
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
+            <p class="text-xs font-medium text-gray-500 uppercase">All</p>
+        </a>
+        <a href="?status=open" class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-blue-300 transition-colors">
+            <p class="text-2xl font-bold text-blue-600">{{ stats.open }}</p>
+            <p class="text-xs font-medium text-gray-500 uppercase">Open</p>
+        </a>
+        <a href="?status=in_progress" class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-purple-300 transition-colors">
+            <p class="text-2xl font-bold text-purple-600">{{ stats.in_progress }}</p>
+            <p class="text-xs font-medium text-gray-500 uppercase">In Progress</p>
+        </a>
+        <a href="?status=pending" class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-amber-300 transition-colors">
+            <p class="text-2xl font-bold text-amber-600">{{ stats.pending }}</p>
+            <p class="text-xs font-medium text-gray-500 uppercase">Pending</p>
+        </a>
+        <a href="?status=resolved" class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-green-300 transition-colors">
+            <p class="text-2xl font-bold text-emerald-600">{{ stats.resolved }}</p>
+            <p class="text-xs font-medium text-gray-500 uppercase">Resolved</p>
+        </a>
+        <a href="?status=closed" class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-gray-400 transition-colors">
+            <p class="text-2xl font-bold text-gray-500">{{ stats.closed }}</p>
+            <p class="text-xs font-medium text-gray-500 uppercase">Closed</p>
+        </a>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <form method="GET" class="flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+                <input type="text" name="search" value="{{ search }}" placeholder="Search tickets..."
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                <select name="status" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                    <option value="">All Status</option>
+                    {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Priority</label>
+                <select name="priority" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                    <option value="">All Priority</option>
+                    {% for val, label in priority_choices %}
+                    <option value="{{ val }}" {% if priority_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                <select name="category" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_filter == cat.id|stringformat:"d" %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if user.is_staff_member %}
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Assigned</label>
+                <select name="assigned" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                    <option value="">All</option>
+                    <option value="me" {% if assigned_filter == 'me' %}selected{% endif %}>My Tickets</option>
+                    <option value="unassigned" {% if assigned_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
+                Filter
+            </button>
+            <a href="{% url 'tickets:list' %}" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">Clear</a>
+        </form>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-900/50">
+                    <tr>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ticket</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Priority</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Customer</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Agent</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Category</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Created</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    {% for ticket in tickets %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                        onclick="window.location='{% url 'tickets:detail' ticket.ticket_id %}'">
+                        <td class="px-5 py-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-mono text-primary-600 dark:text-primary-400">{{ ticket.ticket_id }}</span>
+                                    {% if ticket.is_escalated %}
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Escalated</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white mt-0.5 line-clamp-1">{{ ticket.title }}</p>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                                  style="background-color: {{ ticket.status_color }}20; color: {{ ticket.status_color }}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                                  style="background-color: {{ ticket.priority_color }}20; color: {{ ticket.priority_color }}">
+                                {{ ticket.get_priority_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4 hidden md:table-cell">
+                            <p class="text-sm text-gray-900 dark:text-white">{{ ticket.customer.full_name }}</p>
+                        </td>
+                        <td class="px-5 py-4 hidden lg:table-cell">
+                            {% if ticket.assigned_agent %}
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-medium mr-2">
+                                    {{ ticket.assigned_agent.initials }}
+                                </div>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ ticket.assigned_agent.full_name }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-sm text-gray-400 italic">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-4 hidden lg:table-cell">
+                            {% if ticket.category %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" style="background-color: {{ ticket.category.color }}20; color: {{ ticket.category.color }}">
+                                {{ ticket.category.name }}
+                            </span>
+                            {% else %}
+                            <span class="text-xs text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="text-sm text-gray-500">{{ ticket.created_at|naturaltime }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <p class="text-gray-500 dark:text-gray-400 font-medium">No tickets found</p>
+                            <p class="text-sm text-gray-400 mt-1">Create your first ticket to get started</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if tickets.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <p class="text-sm text-gray-500">Showing {{ tickets.start_index }}-{{ tickets.end_index }} of {{ tickets.paginator.count }}</p>
+            <div class="flex space-x-1">
+                {% if tickets.has_previous %}
+                <a href="?page={{ tickets.previous_page_number }}&status={{ status_filter }}&priority={{ priority_filter }}&search={{ search }}"
+                   class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50">
+                    Previous
+                </a>
+                {% endif %}
+                {% if tickets.has_next %}
+                <a href="?page={{ tickets.next_page_number }}&status={{ status_filter }}&priority={{ priority_filter }}&search={{ search }}"
+                   class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

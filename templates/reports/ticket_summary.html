@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Ticket Summary Report — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Ticket Summary Report</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ date_from }} to {{ date_to }}</p>
+        </div>
+        <a href="?date_from={{ date_from }}&date_to={{ date_to }}&export=csv"
+           class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Export CSV
+        </a>
+    </div>
+
+    <!-- Date Filter -->
+    <form method="get" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap items-end gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
+            <input type="date" name="date_from" value="{{ date_from }}"
+                   class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 transition">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
+            <input type="date" name="date_to" value="{{ date_to }}"
+                   class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 transition">
+        </div>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">Apply</button>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ summary.total }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ summary.open }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Open</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ summary.assigned }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Assigned</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ summary.in_progress }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">In Progress</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ summary.resolved }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Resolved</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{ summary.closed }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Closed</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- By Priority -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">By Priority</h3>
+            <div class="space-y-3">
+                {% for item in by_priority %}
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700 dark:text-gray-300 capitalize">{{ item.priority }}</span>
+                    <div class="flex items-center gap-2">
+                        <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            {% widthratio item.count summary.total 100 as pct %}
+                            <div class="rounded-full h-2
+                                {% if item.priority == 'urgent' %}bg-red-500{% elif item.priority == 'high' %}bg-orange-500{% elif item.priority == 'medium' %}bg-yellow-500{% else %}bg-green-500{% endif %}"
+                                 style="width: {% widthratio item.count summary.total 100 %}%"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{{ item.count }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- By Category -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">By Category</h3>
+            <div class="space-y-3">
+                {% for item in by_category %}
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ item.category__name|default:"Uncategorized" }}</span>
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ item.count }}</span>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500 dark:text-gray-400">No category data available.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

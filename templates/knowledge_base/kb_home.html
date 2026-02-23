@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Knowledge Base — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- ── Hero ──────────────────────────────────────────── -->
+    <div class="text-center py-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">How can we help you?</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-2 max-w-lg mx-auto">Search our knowledge base for answers to your questions</p>
+        <form action="{% url 'knowledge_base:search' %}" method="get" class="mt-6 max-w-xl mx-auto">
+            <div class="relative">
+                <input type="text" name="q" placeholder="Search articles..."
+                       class="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-5 py-3.5 pl-12 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg transition">
+                <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Categories ────────────────────────────────────── -->
+    <div>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Browse by Category</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for cat in categories %}
+            <a href="{% url 'knowledge_base:category' cat.slug %}"
+               class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition group">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{{ cat.name }}</h3>
+                </div>
+                {% if cat.description %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ cat.description }}</p>
+                {% endif %}
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">{{ cat.article_count }} article{{ cat.article_count|pluralize }}</p>
+            </a>
+            {% empty %}
+            <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
+                <p>No categories yet. Check back soon!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ── Featured Articles ─────────────────────────────── -->
+    {% if featured_articles %}
+    <div>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Featured Articles</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for article in featured_articles %}
+            <a href="{% url 'knowledge_base:article' article.slug %}"
+               class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition group">
+                <h3 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{{ article.title }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">{{ article.excerpt }}</p>
+                <div class="flex items-center gap-3 mt-3 text-xs text-gray-400 dark:text-gray-500">
+                    <span>{{ article.reading_time }} min read</span>
+                    <span>·</span>
+                    <span>{{ article.views_count }} views</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Popular Articles ──────────────────────────────── -->
+    {% if popular_articles %}
+    <div>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Most Popular</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+            {% for article in popular_articles %}
+            <a href="{% url 'knowledge_base:article' article.slug %}"
+               class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+                <div>
+                    <h3 class="font-medium text-gray-900 dark:text-white text-sm">{{ article.title }}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ article.category.name|default:"Uncategorized" }}</p>
+                </div>
+                <span class="text-xs text-gray-400">{{ article.views_count }} views</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

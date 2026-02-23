@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} — Knowledge Base{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center gap-4">
+        <a href="{% url 'knowledge_base:home' %}" class="text-blue-600 hover:underline dark:text-blue-400 text-sm">← Knowledge Base</a>
+    </div>
+
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ category.name }}</h1>
+        {% if category.description %}
+        <p class="text-gray-500 dark:text-gray-400 mt-1">{{ category.description }}</p>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 gap-3">
+        {% for article in articles %}
+        <a href="{% url 'knowledge_base:article' article.slug %}"
+           class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition group">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <h3 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{{ article.title }}</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ article.excerpt }}</p>
+                    <div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                        <span>{{ article.reading_time }} min read</span>
+                        <span>·</span>
+                        <span>{{ article.author.full_name|default:"Staff" }}</span>
+                        <span>·</span>
+                        <span>{{ article.published_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-500 flex-shrink-0 ml-4 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+        </a>
+        {% empty %}
+        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+            <p>No articles in this category yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if articles.has_other_pages %}
+    <div class="flex justify-center gap-2">
+        {% if articles.has_previous %}
+        <a href="?page={{ articles.previous_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Previous</a>
+        {% endif %}
+        <span class="px-4 py-2 text-sm text-gray-500">Page {{ articles.number }} of {{ articles.paginator.num_pages }}</span>
+        {% if articles.has_next %}
+        <a href="?page={{ articles.next_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

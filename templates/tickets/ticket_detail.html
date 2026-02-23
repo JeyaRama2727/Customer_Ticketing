@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ ticket.ticket_id }} — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-3 mb-2">
+                <a href="{% url 'tickets:list' %}" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <span class="text-sm font-mono text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-2 py-0.5 rounded">{{ ticket.ticket_id }}</span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium" style="background-color: {{ ticket.status_color }}20; color: {{ ticket.status_color }}">
+                    {{ ticket.get_status_display }}
+                </span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium" style="background-color: {{ ticket.priority_color }}20; color: {{ ticket.priority_color }}">
+                    {{ ticket.get_priority_display }}
+                </span>
+                {% if ticket.is_escalated %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    Escalated L{{ ticket.escalation_level }}
+                </span>
+                {% endif %}
+            </div>
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ ticket.title }}</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                Opened by <span class="font-medium text-gray-700 dark:text-gray-300">{{ ticket.customer.full_name }}</span>
+                · {{ ticket.created_at|naturaltime }}
+            </p>
+        </div>
+
+        {% if user.is_staff_member %}
+        <div class="flex items-center space-x-2">
+            <!-- Quick assign to self -->
+            {% if not ticket.assigned_agent or ticket.assigned_agent != user %}
+            <form method="POST" action="{% url 'tickets:assign' ticket.ticket_id %}">
+                {% csrf_token %}
+                <input type="hidden" name="agent_id" value="self">
+                <button type="submit" class="px-3 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors border border-primary-200 dark:border-primary-800">
+                    Assign to me
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content (Left) -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Description -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Description</h2>
+                <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                    {{ ticket.description|linebreaksbr }}
+                </div>
+
+                {% if attachments %}
+                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Attachments</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for att in attachments %}
+                        <a href="{{ att.file.url }}" target="_blank"
+                           class="inline-flex items-center px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                            </svg>
+                            {{ att.filename }}
+                            <span class="ml-2 text-xs text-gray-400">{{ att.file_size_display }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Conversation -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                    <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Conversation</h2>
+                </div>
+
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                    {% for comment in comments %}
+                    <div class="p-4 {% if comment.comment_type == 'internal_note' %}bg-amber-50/50 dark:bg-amber-900/10 border-l-4 border-amber-400{% endif %}">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-semibold text-white
+                                {% if comment.comment_type == 'system' %}bg-gray-400
+                                {% elif comment.comment_type == 'internal_note' %}bg-amber-500
+                                {% elif comment.author.is_staff_member %}bg-primary-500
+                                {% else %}bg-green-500{% endif %}">
+                                {% if comment.author %}{{ comment.author.initials }}{% else %}SYS{% endif %}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {% if comment.author %}{{ comment.author.full_name }}{% else %}System{% endif %}
+                                    </span>
+                                    {% if comment.comment_type == 'internal_note' %}
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Internal Note</span>
+                                    {% endif %}
+                                    <span class="text-xs text-gray-400">{{ comment.created_at|naturaltime }}</span>
+                                </div>
+                                <div class="text-sm text-gray-700 dark:text-gray-300">
+                                    {{ comment.content|linebreaksbr }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-8 text-center text-gray-400">
+                        <p>No comments yet. Start the conversation below.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Comment -->
+                <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 rounded-b-xl">
+                    <form method="POST" action="{% url 'tickets:comment' ticket.ticket_id %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <textarea name="content" rows="3" required placeholder="Write your reply..."
+                                  class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="flex items-center space-x-3">
+                                <input type="file" name="attachments" multiple class="text-xs text-gray-500">
+                                {% if user.is_staff_member %}
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" name="comment_type" value="internal_note"
+                                           class="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-400">
+                                    <span class="text-xs text-gray-500 font-medium">Internal Note</span>
+                                </label>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                                Send Reply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" x-data="{ showTimeline: false }">
+                <button @click="showTimeline = !showTimeline" class="w-full p-4 flex items-center justify-between text-sm font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition-colors">
+                    <span>Activity Timeline ({{ activities|length }})</span>
+                    <svg :class="{ 'rotate-180': showTimeline }" class="w-4 h-4 transition-transform text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="showTimeline" x-transition class="px-4 pb-4 space-y-3">
+                    {% for activity in activities %}
+                    <div class="flex items-start space-x-3 text-sm">
+                        <div class="w-2 h-2 mt-1.5 rounded-full bg-primary-400 flex-shrink-0"></div>
+                        <div class="flex-1">
+                            <p class="text-gray-700 dark:text-gray-300">{{ activity.description }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">{{ activity.created_at|naturaltime }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar (Right) -->
+        <div class="space-y-4">
+
+            {% if user.is_staff_member %}
+            <!-- Quick Update Panel -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Update Ticket</h3>
+                <form method="POST" action="{% url 'tickets:update' ticket.ticket_id %}" class="space-y-3">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                        <select name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                            {% for val, label in status_choices %}
+                            <option value="{{ val }}" {% if ticket.status == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Priority</label>
+                        <select name="priority" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                            {% for val, label in priority_choices %}
+                            <option value="{{ val }}" {% if ticket.priority == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Assign To</label>
+                        <select name="assigned_agent" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                            <option value="">Unassigned</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent.pk }}" {% if ticket.assigned_agent == agent %}selected{% endif %}>{{ agent.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                        <select name="category" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white">
+                            <option value="">None</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if ticket.category == cat %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
+                        Update
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Ticket Details Panel -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Details</h3>
+                <dl class="space-y-3">
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Customer</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white mt-0.5">{{ ticket.customer.full_name }}</dd>
+                        <dd class="text-xs text-gray-400">{{ ticket.customer.email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Assigned Agent</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white mt-0.5">
+                            {% if ticket.assigned_agent %}{{ ticket.assigned_agent.full_name }}{% else %}<span class="italic text-gray-400">Unassigned</span>{% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Source</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white mt-0.5 capitalize">{{ ticket.source }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Created</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white mt-0.5">{{ ticket.created_at|date:"M d, Y H:i" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Updated</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white mt-0.5">{{ ticket.updated_at|naturaltime }}</dd>
+                    </div>
+                    {% if ticket.due_date %}
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Due Date</dt>
+                        <dd class="text-sm {% if ticket.is_overdue %}text-red-600 font-medium{% else %}text-gray-900 dark:text-white{% endif %} mt-0.5">
+                            {{ ticket.due_date|date:"M d, Y H:i" }}
+                            {% if ticket.is_overdue %} (Overdue){% endif %}
+                        </dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+
+            <!-- SLA Panel -->
+            {% if ticket.sla_policy %}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">SLA Status</h3>
+                <dl class="space-y-3">
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Policy</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white mt-0.5">{{ ticket.sla_policy.name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Response Deadline</dt>
+                        <dd class="text-sm mt-0.5 {% if ticket.sla_response_breached %}text-red-600 font-medium{% else %}text-gray-900 dark:text-white{% endif %}">
+                            {{ ticket.sla_response_deadline|date:"M d, Y H:i" }}
+                            {% if ticket.sla_response_met == True %}
+                            <span class="text-emerald-500 ml-1">✓ Met</span>
+                            {% elif ticket.sla_response_breached %}
+                            <span class="text-red-500 ml-1">✗ Breached</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500">Resolution Deadline</dt>
+                        <dd class="text-sm mt-0.5 {% if ticket.sla_resolution_breached %}text-red-600 font-medium{% else %}text-gray-900 dark:text-white{% endif %}">
+                            {{ ticket.sla_resolution_deadline|date:"M d, Y H:i" }}
+                            {% if ticket.sla_resolution_met == True %}
+                            <span class="text-emerald-500 ml-1">✓ Met</span>
+                            {% elif ticket.sla_resolution_breached %}
+                            <span class="text-red-500 ml-1">✗ Breached</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

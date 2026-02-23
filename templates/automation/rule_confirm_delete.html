@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Rule — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-12">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center space-y-4">
+        <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
+            <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Delete Automation Rule</h2>
+        <p class="text-gray-600 dark:text-gray-400">
+            Are you sure you want to delete <strong class="text-gray-900 dark:text-white">{{ rule.name }}</strong>?
+            This action cannot be undone. All execution logs for this rule will be preserved.
+        </p>
+        <form method="post" class="flex items-center justify-center gap-3 pt-2">
+            {% csrf_token %}
+            <a href="{% url 'automation:list' %}"
+               class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</a>
+            <button type="submit"
+                    class="px-6 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition">
+                Delete Rule
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

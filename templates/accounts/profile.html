@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}My Profile — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Update your personal information and preferences</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Avatar Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile Picture</h2>
+            <div class="flex items-center space-x-6">
+                {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" class="w-20 h-20 rounded-full object-cover ring-4 ring-primary-100 dark:ring-primary-900">
+                {% else %}
+                <div class="w-20 h-20 rounded-full bg-primary-500 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-primary-100 dark:ring-primary-900">
+                    {{ user.initials }}
+                </div>
+                {% endif %}
+                <div>
+                    <input type="file" name="avatar" accept="image/*"
+                           class="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100 dark:file:bg-primary-900/30 dark:file:text-primary-400">
+                    <p class="text-xs text-gray-400 mt-1">JPG, PNG or GIF. Max 10MB.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal Info -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Personal Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+                    <input type="text" name="first_name" value="{{ user.first_name }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+                    <input type="text" name="last_name" value="{{ user.last_name }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                    <input type="email" value="{{ user.email }}" disabled
+                           class="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 text-sm cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+                    <input type="text" name="phone" value="{{ user.phone }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                    <input type="text" name="department" value="{{ user.department }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Job Title</label>
+                    <input type="text" name="job_title" value="{{ user.job_title }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 text-sm">
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Preferences</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Timezone</label>
+                    <select name="timezone_pref"
+                            class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 text-sm">
+                        <option value="UTC" {% if user.timezone_pref == 'UTC' %}selected{% endif %}>UTC</option>
+                        <option value="US/Eastern" {% if user.timezone_pref == 'US/Eastern' %}selected{% endif %}>US/Eastern</option>
+                        <option value="US/Pacific" {% if user.timezone_pref == 'US/Pacific' %}selected{% endif %}>US/Pacific</option>
+                        <option value="Europe/London" {% if user.timezone_pref == 'Europe/London' %}selected{% endif %}>Europe/London</option>
+                        <option value="Asia/Kolkata" {% if user.timezone_pref == 'Asia/Kolkata' %}selected{% endif %}>Asia/Kolkata</option>
+                        <option value="Asia/Tokyo" {% if user.timezone_pref == 'Asia/Tokyo' %}selected{% endif %}>Asia/Tokyo</option>
+                    </select>
+                </div>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" name="email_notifications" {% if user.email_notifications %}checked{% endif %}
+                           class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Receive email notifications</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" name="dark_mode" {% if user.dark_mode %}checked{% endif %}
+                           class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Dark mode preference</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit"
+                    class="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors shadow-sm text-sm">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

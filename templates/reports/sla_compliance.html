@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}SLA Compliance Report — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">SLA Compliance Report</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ date_from }} to {{ date_to }}</p>
+        </div>
+        <a href="?date_from={{ date_from }}&date_to={{ date_to }}&export=csv"
+           class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/>
+            </svg>
+            Export CSV
+        </a>
+    </div>
+
+    <!-- Date Filter -->
+    <form method="get" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap items-end gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
+            <input type="date" name="date_from" value="{{ date_from }}"
+                   class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
+            <input type="date" name="date_to" value="{{ date_to }}"
+                   class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm">
+        </div>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">Apply</button>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 text-center">
+            <p class="text-3xl font-bold {% if compliance_rate >= 90 %}text-green-600 dark:text-green-400{% elif compliance_rate >= 70 %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %}">{{ compliance_rate }}%</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Compliance Rate</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 text-center">
+            <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_tickets }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Tickets</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 text-center">
+            <p class="text-3xl font-bold text-orange-600 dark:text-orange-400">{{ response_breaches }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Response Breaches</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 text-center">
+            <p class="text-3xl font-bold text-red-600 dark:text-red-400">{{ resolution_breaches }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Resolution Breaches</p>
+        </div>
+    </div>
+
+    <!-- Breach Details -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Breach Details</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Ticket</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Policy</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Type</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Deadline</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Breached At</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for breach in breaches %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                        <td class="px-6 py-4">
+                            <a href="{% url 'tickets:detail' breach.ticket.ticket_id %}" class="text-blue-600 hover:underline dark:text-blue-400 text-sm font-medium">{{ breach.ticket.ticket_id }}</a>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-xs">{{ breach.ticket.title }}</p>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{{ breach.policy.name }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if breach.breach_type == 'response' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">Response</span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Resolution</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-gray-300">{{ breach.deadline|date:"M d, Y H:i" }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-gray-300">{{ breach.breached_at|date:"M d, Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">No SLA breaches in this period. Great job!</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

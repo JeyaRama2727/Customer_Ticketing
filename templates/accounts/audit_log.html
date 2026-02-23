@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Login Audit Logs</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Security audit trail for all login attempts</p>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-900/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">IP Address</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    {% for log in logs %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">{{ log.email_attempted }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if log.status == 'success' %}bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300
+                                {% elif log.status == 'failed' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
+                                {% else %}bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300{% endif %}">
+                                {{ log.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 font-mono">{{ log.ip_address }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ log.timestamp|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">No audit logs found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if logs.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <p class="text-sm text-gray-500">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</p>
+            <div class="flex space-x-1">
+                {% if logs.has_previous %}
+                <a href="?page={{ logs.previous_page_number }}" class="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50">Previous</a>
+                {% endif %}
+                {% if logs.has_next %}
+                <a href="?page={{ logs.next_page_number }}" class="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

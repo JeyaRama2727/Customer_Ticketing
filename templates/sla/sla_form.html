@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} SLA Policy — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- ── Header ────────────────────────────────────────── -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'sla:list' %}"
+           class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition">
+            <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                {% if form.instance.pk %}Edit SLA Policy{% else %}Create SLA Policy{% endif %}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Define response and resolution time targets</p>
+        </div>
+    </div>
+
+    <!-- ── Form ──────────────────────────────────────────── -->
+    <form method="post" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div class="flex items-center gap-2 text-red-800 dark:text-red-400 text-sm font-medium mb-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Please correct the errors below
+            </div>
+            {% for field in form %}
+                {% for error in field.errors %}
+                <p class="text-sm text-red-600 dark:text-red-400">{{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+            <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Policy Name -->
+        <div>
+            <label for="id_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Policy Name</label>
+            <input type="text" name="name" id="id_name" value="{{ form.name.value|default:'' }}"
+                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                   placeholder="e.g. Critical Response Policy" required>
+        </div>
+
+        <!-- Priority -->
+        <div>
+            <label for="id_priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority Level</label>
+            <select name="priority" id="id_priority"
+                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                <option value="urgent" {% if form.priority.value == 'urgent' %}selected{% endif %}>Urgent</option>
+                <option value="high" {% if form.priority.value == 'high' %}selected{% endif %}>High</option>
+                <option value="medium" {% if form.priority.value == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="low" {% if form.priority.value == 'low' %}selected{% endif %}>Low</option>
+            </select>
+        </div>
+
+        <!-- Time Fields Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label for="id_response_time_hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Response Time (hours)</label>
+                <input type="number" name="response_time_hours" id="id_response_time_hours"
+                       value="{{ form.response_time_hours.value|default:'1' }}" min="0" step="0.5"
+                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                       required>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max time to first response</p>
+            </div>
+            <div>
+                <label for="id_resolution_time_hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resolution Time (hours)</label>
+                <input type="number" name="resolution_time_hours" id="id_resolution_time_hours"
+                       value="{{ form.resolution_time_hours.value|default:'4' }}" min="0" step="0.5"
+                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                       required>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max time to resolve ticket</p>
+            </div>
+            <div>
+                <label for="id_escalation_time_hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Escalation Time (hours)</label>
+                <input type="number" name="escalation_time_hours" id="id_escalation_time_hours"
+                       value="{{ form.escalation_time_hours.value|default:'0' }}" min="0" step="0.5"
+                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                       required>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-escalation threshold</p>
+            </div>
+        </div>
+
+        <!-- Active Toggle -->
+        <div class="flex items-center gap-3">
+            <input type="checkbox" name="is_active" id="id_is_active"
+                   {% if form.instance.pk %}{% if form.is_active.value %}checked{% endif %}{% else %}checked{% endif %}
+                   class="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500">
+            <label for="id_is_active" class="text-sm font-medium text-gray-700 dark:text-gray-300">Policy is active</label>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <a href="{% url 'sla:list' %}"
+               class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+                {% if form.instance.pk %}Update Policy{% else %}Create Policy{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

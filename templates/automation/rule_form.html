@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if rule %}Edit{% else %}Create{% endif %} Automation Rule — JeyaRamaDesk{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <!-- ── Header ────────────────────────────────────────── -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'automation:list' %}"
+           class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition">
+            <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                {% if rule %}Edit Rule: {{ rule.name }}{% else %}Create Automation Rule{% endif %}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Define trigger, conditions, and action for this rule</p>
+        </div>
+    </div>
+
+    <!-- ── Form ──────────────────────────────────────────── -->
+    <form method="post" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+        {% csrf_token %}
+
+        <!-- Basic Info -->
+        <div class="p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rule Details</h3>
+            <div>
+                <label for="id_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rule Name</label>
+                <input type="text" name="name" id="id_name" value="{{ rule.name|default:'' }}"
+                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                       placeholder="e.g. Auto-assign urgent billing tickets" required>
+            </div>
+            <div>
+                <label for="id_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea name="description" id="id_description" rows="2"
+                          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          placeholder="Describe what this rule does...">{{ rule.description|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Trigger & Conditions -->
+        <div class="p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trigger & Conditions</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="id_trigger_event" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Trigger Event</label>
+                    <select name="trigger_event" id="id_trigger_event"
+                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        {% for value, label in trigger_choices %}
+                        <option value="{{ value }}" {% if rule.trigger_event == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="id_priority_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Execution Order</label>
+                    <input type="number" name="priority_order" id="id_priority_order"
+                           value="{{ rule.priority_order|default:'0' }}" min="0"
+                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Lower numbers execute first</p>
+                </div>
+            </div>
+            <div>
+                <label for="id_conditions" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conditions (JSON)</label>
+                <textarea name="conditions" id="id_conditions" rows="3"
+                          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          placeholder='{"priority": "urgent", "category__name": "billing"}'>{% if rule %}{{ rule.conditions|default:"{}"|safe }}{% else %}{}{% endif %}</textarea>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">JSON object matching ticket fields. Empty = match all tickets.</p>
+            </div>
+        </div>
+
+        <!-- Action -->
+        <div class="p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</h3>
+            <div>
+                <label for="id_action_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action Type</label>
+                <select name="action_type" id="id_action_type"
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    {% for value, label in action_choices %}
+                    <option value="{{ value }}" {% if rule.action_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="id_action_params" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action Parameters (JSON)</label>
+                <textarea name="action_params" id="id_action_params" rows="3"
+                          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          placeholder='{"priority": "high"}'>{% if rule %}{{ rule.action_params|default:"{}"|safe }}{% else %}{}{% endif %}</textarea>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Examples: assign_agent → {"agent_id": "uuid"} | change_priority → {"priority": "high"} | add_tag → {"tag": "vip"}
+                </p>
+            </div>
+        </div>
+
+        <!-- Options & Submit -->
+        <div class="p-6 space-y-4">
+            <div class="flex items-center gap-6">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="is_active"
+                           {% if rule %}{% if rule.is_active %}checked{% endif %}{% else %}checked{% endif %}
+                           class="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Active</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="stop_processing"
+                           {% if rule.stop_processing %}checked{% endif %}
+                           class="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Stop processing after match</span>
+                </label>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-4">
+                <a href="{% url 'automation:list' %}"
+                   class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</a>
+                <button type="submit"
+                        class="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+                    {% if rule %}Update Rule{% else %}Create Rule{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if article %}Edit{% else %}Create{% endif %} Article — Knowledge Base{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center gap-4">
+        <a href="{% url 'knowledge_base:manage' %}"
+           class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition">
+            <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            {% if article %}Edit: {{ article.title|truncatechars:40 }}{% else %}Create New Article{% endif %}
+        </h1>
+    </div>
+
+    <form method="post" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+        {% csrf_token %}
+
+        <!-- Content -->
+        <div class="p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Content</h3>
+            <div>
+                <label for="id_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                <input type="text" name="title" id="id_title" value="{{ article.title|default:'' }}"
+                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 transition"
+                       placeholder="Article title" required>
+            </div>
+            <div>
+                <label for="id_category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                <select name="category" id="id_category"
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 transition">
+                    <option value="">— No Category —</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.pk }}" {% if article.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="id_body" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Body (HTML supported)</label>
+                <textarea name="body" id="id_body" rows="15"
+                          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 font-mono text-sm focus:ring-2 focus:ring-blue-500 transition"
+                          placeholder="Write your article content here...">{{ article.body|default:'' }}</textarea>
+            </div>
+            <div>
+                <label for="id_excerpt" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Excerpt</label>
+                <textarea name="excerpt" id="id_excerpt" rows="2"
+                          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 transition"
+                          placeholder="Short summary for search results...">{{ article.excerpt|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Settings</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="id_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                    <select name="status" id="id_status"
+                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 transition">
+                        <option value="draft" {% if article.status == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="published" {% if article.status == 'published' %}selected{% endif %}>Published</option>
+                        <option value="archived" {% if article.status == 'archived' %}selected{% endif %}>Archived</option>
+                    </select>
+                </div>
+                <div class="flex flex-col justify-end gap-3">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="is_internal" {% if article.is_internal %}checked{% endif %}
+                               class="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Internal only (staff)</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="is_featured" {% if article.is_featured %}checked{% endif %}
+                               class="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Featured article</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEO -->
+        <div class="p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">SEO (Optional)</h3>
+            <div>
+                <label for="id_meta_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meta Title</label>
+                <input type="text" name="meta_title" id="id_meta_title" value="{{ article.meta_title|default:'' }}"
+                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 transition"
+                       placeholder="Custom page title for search engines">
+            </div>
+            <div>
+                <label for="id_meta_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meta Description</label>
+                <textarea name="meta_description" id="id_meta_description" rows="2"
+                          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-blue-500 transition"
+                          placeholder="Short description for search engine results">{{ article.meta_description|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="p-6 flex items-center justify-end gap-3">
+            <a href="{% url 'knowledge_base:manage' %}"
+               class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</a>
+            <button type="submit"
+                    class="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+                {% if article %}Update Article{% else %}Create Article{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
