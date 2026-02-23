@@ -65,7 +65,7 @@ class Article(models.Model):
         null=True, related_name='articles',
     )
     body = models.TextField('Content', help_text='Supports HTML/Markdown')
-    excerpt = models.TextField(
+    excerpt = models.CharField(
         'Excerpt', max_length=500, blank=True, default='',
         help_text='Short summary shown in search results',
     )
@@ -77,7 +77,7 @@ class Article(models.Model):
 
     # ── SEO ───────────────────────────────────────────────
     meta_title = models.CharField('Meta Title', max_length=200, blank=True, default='')
-    meta_description = models.TextField('Meta Description', max_length=300, blank=True, default='')
+    meta_description = models.CharField('Meta Description', max_length=300, blank=True, default='')
 
     # ── Engagement ────────────────────────────────────────
     views_count = models.PositiveIntegerField('Views', default=0)

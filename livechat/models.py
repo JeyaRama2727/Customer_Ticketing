@@ -50,6 +50,7 @@ class ChatRoom(models.Model):
     closed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        db_table = 'jrd_chat_rooms'
         ordering = ['-updated_at']
         indexes = [
             models.Index(fields=['customer', 'status'], name='idx_chat_cust_status'),
@@ -93,6 +94,7 @@ class ChatMessage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'jrd_chat_messages'
         ordering = ['created_at']
         indexes = [
             models.Index(fields=['room', 'created_at'], name='idx_chatmsg_room_time'),

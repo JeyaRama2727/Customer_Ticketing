@@ -52,6 +52,7 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'jrd_notifications'
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['user', '-created_at'], name='idx_notif_user_created'),
