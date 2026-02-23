@@ -91,7 +91,7 @@ class Ticket(models.Model):
     )
 
     # ── Content ───────────────────────────────────────────────
-    title = models.CharField(max_length=300)
+    title = models.CharField(max_length=255)
     description = models.TextField(help_text='Rich text description of the issue')
 
     # ── Classification ────────────────────────────────────────

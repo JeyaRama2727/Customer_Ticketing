@@ -58,15 +58,15 @@ class Article(models.Model):
         ARCHIVED = 'archived', 'Archived'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.CharField('Title', max_length=300)
-    slug = models.SlugField('Slug', max_length=300, unique=True)
+    title = models.CharField('Title', max_length=255)
+    slug = models.SlugField('Slug', max_length=255, unique=True)
     category = models.ForeignKey(
         KBCategory, on_delete=models.SET_NULL,
         null=True, related_name='articles',
     )
     body = models.TextField('Content', help_text='Supports HTML/Markdown')
     excerpt = models.CharField(
-        'Excerpt', max_length=500, blank=True, default='',
+        'Excerpt', max_length=255, blank=True, default='',
         help_text='Short summary shown in search results',
     )
     status = models.CharField(
@@ -77,7 +77,7 @@ class Article(models.Model):
 
     # ── SEO ───────────────────────────────────────────────
     meta_title = models.CharField('Meta Title', max_length=200, blank=True, default='')
-    meta_description = models.CharField('Meta Description', max_length=300, blank=True, default='')
+    meta_description = models.CharField('Meta Description', max_length=255, blank=True, default='')
 
     # ── Engagement ────────────────────────────────────────
     views_count = models.PositiveIntegerField('Views', default=0)
